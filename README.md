@@ -1,2 +1,2 @@
-#Soubory pro lokalni management 
+Soubory pro lokalni management 
 Nahrat do /var/www
