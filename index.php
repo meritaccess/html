@@ -1,4 +1,5 @@
 <?php
+// ========== begin WEBAPP KONFIGURACE
 // zavedeni session
 session_start();
 // zakazani cache
@@ -62,7 +63,16 @@ if(!isset($_SESSION['access_granted'])) {
 		header('location: ./?v=lock');
 	}
 }
-// SQL pripojeni
+// funkce pro verzovani
+function fileVersioning($tracked_file_input) {
+	$datetime_update = date('ymdHi', filemtime($tracked_file_input));
+	$tracked_file_output = $tracked_file_input . '?v=' . $datetime_update;
+	return $tracked_file_output;
+}
+// datum aktualizace - index
+$update_datetime = filemtime(__FILE__);
+// ========== end WEBAPP KONFIGURACE
+// ========== begin SQL PRIPOJENI
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'ma');
 define('DB_PASSWORD', 'FrameWork5414*');
@@ -72,7 +82,8 @@ $connection = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 if($connection === false) {
 	die('CONNECTION ERROR! ' . mysqli_connect_error());
 }
-// prihlasovaci proces
+// ========== end SQL PRIPOJENI
+// ========== begin PRIHLASOVACI PROCES
 if(isset($_POST['login'])) {
 	$input_username = $_POST['username'];
 	$input_password = $_POST['password'];
@@ -111,15 +122,8 @@ if($key_view == $stat_view_array['x']) {
 	session_destroy();
 	header('location: ./?v=lock');
 }
-// funkce pro verzovani
-function fileVersioning($tracked_file_input) {
-	$datetime_update = date('ymdHi', filemtime($tracked_file_input));
-	$tracked_file_output = $tracked_file_input . '?v=' . $datetime_update;
-	return $tracked_file_output;
-}
-// datum aktualizace - index
-$update_datetime = filemtime(__FILE__);
-// ========== cast configdu
+// ========== end PRIHLASOVACI PROCES
+// ========== begin CONFIGDU
 // editace konfigurace
 if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 	$config_data = array();
@@ -127,7 +131,7 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 // editace zaznamu konfigurace
 	if(isset($_POST['edit-config'])) {
 // pokud existuje SESSION, presue jej do TEMP_SESSION
-		if(isset($_SESSION['config_data'])) {
+		if(!isset($_SESSION['config_data_temp']) && isset($_SESSION['config_data'])) {
 			$_SESSION['config_data_temp'] = $_SESSION['config_data'];
 		}
 		$id = $_POST['id'];
@@ -146,13 +150,16 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 // aktualizuje data v SESSION
 				$_SESSION['config_data_temp'][$index]['property'] = $edit_property;
 				$_SESSION['config_data_temp'][$index]['value'] = $edit_value;
+// pokud index nebyl nalezen, prida novy zaznam
+			} else {
+				$_SESSION['config_data_temp'][] = array('id' => $id, 'property' => $edit_property, 'value' => $edit_value);
 			}
 			header('location: ./?v=config');
 			exit();
 		}
 	}
 }
-// editace konfigurace - ulozeni
+// editace konfigurace - ULOZENI
 if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 	$sqlquery_edit = "UPDATE ConfigDU SET property = ?, value = ? WHERE id = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_edit);
@@ -162,21 +169,23 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 		exit;
 	}
 // projde vsechny zaznamy v SESSION
-	foreach($_SESSION['config_data_temp'] as $data) {
-		$id = $data['id'];
-		$edit_property = $data['property'];
-		$edit_value = $data['value'];
+	if(isset($_SESSION['config_data_temp'])) {
+		foreach($_SESSION['config_data_temp'] as $data) {
+			$id = $data['id'];
+			$edit_property = $data['property'];
+			$edit_value = $data['value'];
 // priprava zaznamu
-		mysqli_stmt_bind_param($stmt, "ssi", $edit_property, $edit_value, $id);
-		$result_edit = mysqli_stmt_execute($stmt);
+			mysqli_stmt_bind_param($stmt, "ssi", $edit_property, $edit_value, $id);
+			$result_edit = mysqli_stmt_execute($stmt);
 // pokud doslo k chybe, vypise ji
-		if(!$result_edit) {
-			$_SESSION['error_message'] = 'Error updating database: ' . mysqli_error($connection) . '!';
-			header('location: ./?v=config;f=alert');
-			exit;
+			if(!$result_edit) {
+				$_SESSION['error_message'] = 'Error updating database: ' . mysqli_error($connection) . '!';
+				header('location: ./?v=config;f=alert');
+				exit;
+			}
 		}
+		unset($_SESSION['config_data_temp']);
 	}
-	unset($_SESSION['config_data_temp']);
 // aktualizace running
 	$sqlquery_update_running = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
 	$result_update_running = mysqli_query($connection, $sqlquery_update_running);
@@ -185,10 +194,12 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 		header('location: ./?v=config;f=alert');
 		exit;
 	}
+// presmerovani
 	header('location: ./?v=config');
 	exit();
 }
-// ========== cast karty
+// ========== end CONFIGDU
+// ========== begin CARDS
 // novy zaznam karty
 if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // ulozeni dat karty do db
@@ -231,7 +242,7 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 		$_SESSION['error_message'] = 'Error executing the query: ' . mysqli_error($connection) . '!';
 		header('location: ./?v=cards;f=alert');
 		exit;
-	}	
+	}
 // editace zaznamu karty do db
 	if(isset($_POST['edit-zaznam'])) {
 		$cardid = $_POST['cardid'];
@@ -266,7 +277,8 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 		exit;
 	}
 }
-// ========== cast users
+// ========== end CARDS
+// ========== begin USERS
 // prace s uzivatelem
 if($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // novy zaznam uzivatele
@@ -340,6 +352,7 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 		exit;
 	}
 }
+// ========== end USERS
 ?><!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -371,7 +384,7 @@ if($key_fact == $stat_fact_array['z']) {
 ?>
 <div id="error-info">
 	<p><?php
-// chybovy hlasky
+// chybove hlasky
 	echo $_SESSION['error_message'];
 ?></p>
 </div>
@@ -416,7 +429,7 @@ if($key_view != $stat_view_array['l']) {
 	</div>
 	<div id="content">
 <?php
-// ========== pohled login
+// ========== begin POHLED LOGIN
 if($key_view == $stat_view_array['l']) {
 ?>
 		<h2>Login</h2>
@@ -432,7 +445,8 @@ echo $url;
 		</div>
 <?php
 }
-// ========== pohled home
+// ========== end POHLED LOGIN
+// ========== begin POHLED HOME
 if($key_view == $stat_view_array['h']) {
 ?>
 		<h2>Dashboard</h2>
@@ -445,7 +459,8 @@ if($key_view == $stat_view_array['h']) {
 		</ul>
 <?php
 }
-// ========== pohled more
+// ========== end POHLED HOME
+// ========== begin POHLED MORE
 if($key_view == $stat_view_array['m']) {
 ?>
 		<h2>More</h2>
@@ -465,7 +480,8 @@ echo date('y.m.di.H.s', $update_datetime);
 		</ul>
 <?php
 }
-// ========== pohled access
+// ========== end POHLED MORE
+// ========== begin POHLED ACCESS
 if($key_view == $stat_view_array['a']) {
 ?>
 		<h2>Access</h2>
@@ -547,7 +563,8 @@ if($key_view == $stat_view_array['a']) {
 		echo '<p>Unable to process query! "' . $sqlquery_1 . '", Error! ' . mysqli_error($connection) . '</p>';
 	}
 }
-// ========== pohled karty
+// ========== end POHLED ACCESS
+// ========== begin POHLED CARDS
 if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Cards</h2>
@@ -600,7 +617,7 @@ $sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
 */
 				echo '<td>' . $row_2['Pozn'] . '</td>';
 				echo '<td><a href="./?v=cards;s=edit;i=' . $row_2['cardid'] . '">Edit</a></td>';
-				echo '<td><a href="./?v=cards;s=delete;i=' . $row_2['cardid'] . '" onclick="return confirm(\'Card - ' . $row_2['Karta'] . ' - will be marked as deleted!\');">Delete</a></td>';
+				echo '<td><a href="./?v=cards;s=delete;i=' . $row_2['cardid'] . '" onclick="return confirm(\'Card - ' . $row_2['Karta'] . ' - will be marked as blocked!\');">Block</a></td>';
 				echo '</tr>';
 				echo "\n";
 			}
@@ -618,7 +635,7 @@ $sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
 		echo '<p>Unable to process query! "' . $sqlquery_2 . '", Error! ' . mysqli_error($connection) . '</p>';
 	}
 }
-// pohled karty - nova karta
+// ========== begin POHLED CARDS - NOVA KARTA
 if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>New card</h2>
@@ -645,7 +662,8 @@ if(!empty($key_info)) {
 		<p><a href="./?v=cards" onclick="return confirm('Are you sure you want to leave without saving?');">&lsaquo; Back on Cards</a></p>
 <?php
 }
-// pohled karty - editace karty
+// ========== end POHLED CARDS - NOVA KARTA
+// ========== begin POHLED CARDS - EDITACE KARTY
 if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Edit card</h2>
@@ -676,17 +694,17 @@ echo $row_select['Povoleni'];
 	if($row_selected == '0') {
 ?>
 					<option value="0" selected="selected">Enabled</option>
-					<option value="1">Delete</option>
+					<option value="1">Block</option>
 <?php
 	} elseif($row_selected == '1') {
 ?>
 					<option value="0">Enable</option>
-					<option value="1" selected="selected">Deleted</option>
+					<option value="1" selected="selected">Blocked</option>
 <?php
 	} else {
 ?>
 					<option value="0">Enable</option>
-					<option value="1">Delete</option>
+					<option value="1">Block</option>
 <?php
 	}
 ?>
@@ -701,7 +719,9 @@ echo $row_select['Pozn'];
 		<p><a href="./?v=cards" onclick="return confirm('Are you sure you want to leave without saving?');">&lsaquo; Back on Cards</a></p>
 <?php
 }
-// ========== pohled users
+// ========== end POHLED CARDS - EDITACE KARTY
+// ========== end POHLED CARDS
+// ========== begin POHLED USERS
 if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Users</h2>
@@ -766,7 +786,7 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 		echo '<p>Unable to process query! "' . $sqlquery_4 . '", Error! ' . mysqli_error($connection) . '</p>';
 	}
 }
-// pohled users - novy user
+// ========== begin POHLED USERS - NOVY USER
 if($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 	?>
 		<h2>New user</h2>
@@ -786,7 +806,8 @@ echo $url;
 		<p><a href="./?v=users" onclick="return confirm('Are you sure you want to leave without saving?');">&lsaquo; Back on Users</a></p>
 <?php
 }
-// pohled users - editace user
+// ========== end POHLED USERS - NOVY USER
+// ========== begin POHLED USERS - EDITACE USERA
 if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 	?>
 		<h2>Edit user</h2>
@@ -832,8 +853,11 @@ echo $row_select['LogonName'];
 		<p><a href="./?v=users" onclick="return confirm('Are you sure you want to leave without saving?');">&lsaquo; Back on Users</a></p>
 <?php
 }
-// ========== pohled configdu
-if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e']) {
+// ========== end POHLED USERS - EDITACE USERA
+// ========== end POHLED USERS
+// ========== begin POHLED CONFIGDU
+// pohled pro potvrzeni vsech zmen
+if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['p']) {
 ?>
 		<h2>Configuration</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Configuration</p>
@@ -863,9 +887,6 @@ if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e']) {
 			<table id="data-table">
 				<thead>
 					<tr>
-<!--
-						<th>id</th>
-// -->
 						<th class="th-3">Property</th>
 						<th class="th-3">Value</th>
 						<th class="th-3">Management</th>
@@ -880,9 +901,6 @@ if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e']) {
 // vypsat data ulozena v session
 		foreach($config_data_view as $row_5) {
 			echo '<tr>';
-/*
-			echo '<td>' . $row_5['id'] . '</td>';
-*/
 			echo '<td class="td-upper">' . $row_5['property'] . '</td>';
 			echo '<td class="td-centered">' . $row_5['value'] . '</td>';
 			echo '<td><a href="./?v=config;s=edit;i=' . $row_5['id'] . '">Edit</a></td>';
@@ -898,7 +916,7 @@ if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e']) {
 		</div>
 <?php
 }
-// pohled configdu - editace konfigurace
+// ========== begin POHLED CONFIGDU - EDITACE KONFIGURACE
 if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 ?>
 		<h2>Edit configuration</h2>
@@ -943,7 +961,9 @@ echo $row_5['regex'];
 		<p><a href="./?v=config" onclick="return confirm('Are you sure you want to leave without saving?');">&lsaquo; Back on Configuration</a></p>
 <?php
 }
-// ========== pohled running
+// ========== end POHLED CONFIGDU - EDITACE KONFIGURACE
+// ========== end POHLED CONFIGDU
+// ========== begin POHLED RUNNING
 if($key_view == $stat_view_array['r']) {
 ?>
 		<h2>Running</h2>
@@ -996,7 +1016,8 @@ if($key_view == $stat_view_array['r']) {
 		echo '<p>Unable to process query! "' . $sqlquery_3 . '", Error! ' . mysqli_error($connection) . '</p>';
 	}
 }
-// ========== pohled logs
+// ========== end POHLED RUNNING
+// ========== begin POHLED LOGS
 if($key_view == $stat_view_array['v']) {
 	?>
 			<h2>Logs</h2>
@@ -1037,7 +1058,9 @@ if($key_view == $stat_view_array['v']) {
 	</div>
 	<div id="footer">
 <?php
-// jiny pohled nez login
+
+// ========== end POHLED LOGS
+// ========== begin JINE POHLED NEZ LOGIN
 if($key_view != $stat_view_array['l']) {
 ?>
 		<ul id="footer-navigation">
@@ -1049,6 +1072,7 @@ if($key_view != $stat_view_array['l']) {
 		</ul>
 <?php
 }
+// ========== end JINE POHLED NEZ LOGIN
 ?>
 	</div>
 </div>

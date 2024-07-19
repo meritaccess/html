@@ -7,7 +7,7 @@
 	outline: none;
 }
 ::placeholder {
-	color: var(--gray500);
+	color: var(--gray2000);
 	opacity: 1;
 }
 html {
@@ -26,7 +26,7 @@ table {
 	table-layout: auto;
 	border-collapse: collapse;
 }
-input {
+input, button, select {
 	-webkit-appearance: none;
 	-webkit-border-radius: 0;
 }
@@ -65,7 +65,7 @@ div#main {
 }
 div#header {
 	grid-area: header;
-	background-color: var(--gray50);
+	background-color: var(--gray200);
 }
 div#header h1 {
 	display: none;
@@ -136,7 +136,7 @@ ul#dashboard li a, ul#dashboard li a:hover {
 	background: var(--icon_block) no-repeat 20px center;
 	background-size: 30px;
 	padding: 20px 0 20px 70px;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 }
 ul#dashboard li#access a {
 	background-image: var(--icon_key);
@@ -189,7 +189,7 @@ ul#more li a, ul#more li a:hover {
 	background: var(--icon_block) no-repeat 10px center;
 	background-size: 15px;
 	padding: 9px 0 9px 34px;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 }
 ul#more li#config a {
 	background-image: var(--icon_settings);
@@ -211,7 +211,7 @@ ul#more li a:hover {
 }
 div#footer {
 	grid-area: footer;
-	background-color: var(--gray50);
+	background-color: var(--gray200);
 }
 div#footer ul#footer-navigation {
 	display: grid;
@@ -314,7 +314,7 @@ form input, form select, form button {
 	outline: 0;
 	box-shadow: none;
 	border-radius: 0;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 	background-color: var(--white);
 }
 form select {
@@ -323,8 +323,8 @@ form select {
 	cursor: pointer;
 }
 form input[readonly="readonly"] {
-	color: var(--gray500);
-	background-color: var(--gray50);
+	color: var(--gray2000);
+	background-color: var(--gray200);
 }
 form input:focus, form select:focus {
 	border-color: var(--blue500);
@@ -347,18 +347,18 @@ div#table-container table th, div#table-container table td {
 	font-weight: normal;
 	line-height: 18px;
 	text-align: left;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 	padding: 10px;
 }
 div#table-container table th {
 	font-weight: bold;
 }
 div#table-container table tr.tr-deleted {
-	color: var(--gray500);
+	color: var(--gray2000);
 	text-decoration: line-through;
 }
 div#table-container table tbody tr:nth-child(odd) {
-	background-color: var(--gray50);
+	background-color: var(--gray200);
 }
 div#table-container table tbody tr:hover, div#table-container table tbody tr:nth-child(odd):hover {
 	background-color: var(--blue50);
@@ -429,7 +429,7 @@ div#data-table-header div.dt-search input {
 	outline: 0;
 	box-shadow: none;
 	border-radius: 0;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 	background-color: var(--white);
 }
 div#data-table-header div.dt-search input:focus {
@@ -493,7 +493,7 @@ div#data-table-footer div.dt-length select {
 	outline: 0;
 	box-shadow: none;
 	border-radius: 0;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 	background-color: var(--white);
 	cursor: pointer;
 }
@@ -527,7 +527,7 @@ div#data-table-footer div.dt-paging button {
 	cursor: pointer;	
 }
 div#data-table-footer div.dt-paging button.disabled {
-	color: var(--gray500);
+	color: var(--gray2000);
 	cursor: not-allowed;
 }
 div.weak-password, div.medium-password, div.strong-password {
@@ -536,7 +536,7 @@ div.weak-password, div.medium-password, div.strong-password {
 	line-height: 18px;
 	padding: 10px;
 	margin-bottom: 10px;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 }
 div.medium-password {
 	color: var(--black);
@@ -558,9 +558,9 @@ div#textarea-container pre {
 	display: block;
 	line-height: 18px;
 	text-align: left;
-	height: calc(100% - 22px);
+	height: calc(100% - 32px);
 	padding: 10px;
-	border: 1px var(--gray100) solid;
+	border: 1px var(--gray300) solid;
 	overflow: auto;
 }
 @media screen and (max-width: 800px) {
