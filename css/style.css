@@ -7,7 +7,7 @@
 	outline: none;
 }
 ::placeholder {
-	color: var(--gray2000);
+	color: var(--gray500);
 	opacity: 1;
 }
 html {
@@ -107,7 +107,7 @@ ul#header-nav li a, ul#header-nav li a:hover {
 	padding-top: 30px;
 	border: none;
 }
-ul#header-nav li#add-card a, ul#header-nav li#add-card a:hover, ul#header-nav li#add-user a, ul#header-nav li#add-user a:hover {
+ul#header-nav li#add-card a, ul#header-nav li#add-card a:hover, ul#header-nav li#add-user a, ul#header-nav li#add-user a:hover, ul#header-nav li#add-timezone a, ul#header-nav li#add-timezone a:hover {
 	background-image: var(--icon_add_circle);
 }
 ul#header-nav li#logout a, ul#header-nav li#logout a:hover {
@@ -116,7 +116,7 @@ ul#header-nav li#logout a, ul#header-nav li#logout a:hover {
 ul#header-nav li#save a, ul#header-nav li#save a:hover {
 	color: var(--red500);
 	background-image: var(--icon_save);
-	filter: invert(41%) sepia(40%) saturate(7482%) hue-rotate(343deg) brightness(99%) contrast(92%);
+	filter: brightness(0) saturate(100%) invert(40%) sepia(64%) saturate(3130%) hue-rotate(338deg) brightness(94%) contrast(104%);
 	animation: tilt-shaking 0.5s infinite;
 }
 ul#dashboard {
@@ -197,14 +197,18 @@ ul#more li#config a {
 ul#more li#running a {
 	background-image: var(--icon_article);
 }
-ul#more li#add-card a, ul#more li#add-user a {
+ul#more li#timezones a {
+	background-image: var(--icon_calendar_month);
+}
+ul#more li#add-card a, ul#more li#add-user a, ul#more li#add-timezone a {
 	background-image: var(--icon_add_circle);
 }
 ul#more li#logs a, ul#more li#logs a {
-	background-image: var(--icon_article);
+	background-image: var(--icon_pending_actions);
 }
 ul#more li#version a, ul#more li#version a {
 	background-image: var(--icon_info);
+	cursor: default;
 }
 ul#more li a:hover {
 	background-color: var(--blue50);
@@ -291,15 +295,17 @@ div#form-container {
 }
 form {
 	display: grid;
-	grid-template-columns: repeat(2, 50%);
+	grid-template-columns: 35% 65%;
 }
 form label {
 	line-height: 18px;
 	text-align: left;
 	display: block;
 	padding: 10px 0;
+	white-space: nowrap;
 }
 form input, form select, form button {
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	color: var(--black);
@@ -334,6 +340,14 @@ form button {
 	text-align: center;
 	cursor: pointer;
 	background-color: var(--blue500);
+}
+form input[type="time"] {
+	cursor: pointer;
+}
+.matrix-4 {
+	display: grid;
+	grid-template-columns: repeat(4, 24%);
+	grid-gap: 1.3333%;
 }
 div#table-container {
 	display: block;
@@ -413,6 +427,7 @@ div#data-table-header div.dt-search label {
 	line-height: 38px;
 }
 div#data-table-header div.dt-search input {
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	color: var(--black);
@@ -436,6 +451,7 @@ div#data-table-header div.dt-search input:focus {
 	border-color: var(--blue500);
 }
 div#data-table-header div.dt-search button {
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	color: var(--blue500);
@@ -478,6 +494,7 @@ div#data-table-footer div.dt-length label {
 	text-align: center;
 }
 div#data-table-footer div.dt-length select {
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
 	font-weight: normal;
 	color: var(--black);
@@ -510,6 +527,7 @@ div#data-table-footer div.dt-paging {
 	word-spacing: 0;
 }
 div#data-table-footer div.dt-paging button {
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 18px;
 	font-weight: normal;
 	color: var(--blue500);
