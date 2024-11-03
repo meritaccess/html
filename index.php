@@ -30,8 +30,8 @@ $title_view_array = ['lock' => 'Login', 'home' => 'Dashboard', 'access' => 'Acce
 // pole vyloucenych, ktere musi mit login
 $keys_url_array_except = [$stat_view_array['h'], $stat_view_array['a'], $stat_view_array['o'], $stat_view_array['c'], $stat_view_array['r'], $stat_view_array['t'], $stat_view_array['u'], $stat_view_array['d'], $stat_view_array['m'], $stat_view_array['v']];
 // pokud chybi v url, doplni
-if(!strpos($url, $search_definition_0) !== false) {
-	if(!isset($_SESSION['access_granted'])) {
+if (!strpos($url, $search_definition_0) !== false) {
+	if (!isset($_SESSION['access_granted'])) {
 		header('location: ./?v=lock');
 	} else {
 		header('location: ./?v=home');
@@ -40,7 +40,7 @@ if(!strpos($url, $search_definition_0) !== false) {
 // roztrhani url
 $temp_url = explode(';', $clean_url);
 // parsovani url
-foreach($temp_url as $pair_url) {
+foreach ($temp_url as $pair_url) {
 	list($value_url, $key_url) = explode('=', $pair_url);
 	$part_url[$value_url] = $key_url;
 }
@@ -50,16 +50,16 @@ $key_cond = strval($part_url['s'] ?? "");
 $key_info = strval($part_url['i'] ?? "");
 $key_fact = strval($part_url['f'] ?? "");
 // presmerovani pokud v adrese jsou jine stavy nez definovane
-if(!in_array($key_view, $stat_view_array)) {
-	if(!isset($_SESSION['access_granted'])) {
+if (!in_array($key_view, $stat_view_array)) {
+	if (!isset($_SESSION['access_granted'])) {
 		header('location: ./?v=lock');
 	} else {
 		header('location: ./?v=home');
 	}
 }
 // presmerovani pokud neni uzivatel prihlasen
-if(!isset($_SESSION['access_granted'])) {
-	if(in_array($key_view, $keys_url_array_except)) {
+if (!isset($_SESSION['access_granted'])) {
+	if (in_array($key_view, $keys_url_array_except)) {
 		header('location: ./?v=lock');
 	}
 }
@@ -69,10 +69,14 @@ function fileVersioning($tracked_file_input) {
 	$tracked_file_output = $tracked_file_input . '?v=' . $datetime_update;
 	return $tracked_file_output;
 }
+// ziskani casu
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_time') {
+	echo date('d.m.Y, H:i:s');
+	exit;
+}
 // datum aktualizace - index
 $update_datetime = filemtime(__FILE__);
 // ========== end WEBAPP KONFIGURACE
-
 // ========== begin SQL PRIPOJENI
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'ma');
@@ -80,12 +84,12 @@ define('DB_PASSWORD', 'FrameWork5414*');
 define('DB_NAME', 'MeritAccessLocal');
 $connection = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 // pokud nefunguje spojeni - chyba
-if($connection === false) {
+if ($connection === false) {
 	die('CONNECTION ERROR! ' . mysqli_connect_error());
 }
 // ========== end SQL PRIPOJENI
 // ========== begin PRIHLASOVACI PROCES
-if(isset($_POST['login'])) {
+if (isset($_POST['login'])) {
 	$input_username = $_POST['username'];
 	$input_password = $_POST['password'];
 // pripravene dotazy pro ochranu proti sql injection
@@ -93,7 +97,7 @@ if(isset($_POST['login'])) {
 	$stmt->bind_param("ss", $input_username, $input_password);
 	$stmt->execute();
 	$result = $stmt->get_result();
-	if($result->num_rows == 1) {
+	if ($result->num_rows == 1) {
 		$_SESSION['access_granted'] = true;
 		header('Location: ./?v=home');
 		exit;
@@ -103,9 +107,9 @@ if(isset($_POST['login'])) {
 		$stmt_rights->bind_param("s", $input_username);
 		$stmt_rights->execute();
 		$result_rights = $stmt_rights->get_result();
-		if($result_rights->num_rows == 1) {
+		if ($result_rights->num_rows == 1) {
 			$row_rights = $result_rights->fetch_assoc();
-			if($row_rights['rights'] != 255) {
+			if ($row_rights['rights'] != 255) {
 				$_SESSION['error_message'] = 'User does not have sufficient rights!';
 				header('Location: ./?v=lock;f=alert');
 				exit;
@@ -122,7 +126,7 @@ if(isset($_POST['login'])) {
 	}
 }
 // odhlaseni
-if($key_view == $stat_view_array['x']) {
+if ($key_view == $stat_view_array['x']) {
 	session_destroy();
 	header('Location: ./?v=lock');
 	exit;
@@ -130,20 +134,20 @@ if($key_view == $stat_view_array['x']) {
 // ========== end PRIHLASOVACI PROCES
 // ========== begin CONFIGDU
 // editace konfigurace
-if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
+if ($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 	$config_data = array();
 	$config_data_temp = array();
 // editace zaznamu konfigurace
-	if(isset($_POST['edit-config'])) {
-// pokud existuje session, presune jej do temp_session
-		if(!isset($_SESSION['config_data_temp']) && isset($_SESSION['config_data'])) {
+	if (isset($_POST['edit-config'])) {
+// pokud existuje session, presune ji do temp_session
+		if (!isset($_SESSION['config_data_temp']) && isset($_SESSION['config_data'])) {
 			$_SESSION['config_data_temp'] = $_SESSION['config_data'];
 		}
 		$id = $_POST['id'];
 		$edit_property = $_POST['edit-property'];
 		$edit_value = $_POST['edit-value'];
 		$configdu_valid = $_POST['configdu-valid'];
-		if(!preg_match('/' . $configdu_valid . '/', $edit_value)) {
+		if (!preg_match('/' . $configdu_valid . '/', $edit_value)) {
 			$_SESSION['error_message'] = 'Error! Invalid format for property: ' . $edit_property . '!';
 			header('Location: ./?v=config;f=alert');
 			exit;
@@ -151,7 +155,7 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 // najde index daneho id v poli session
 			$index = array_search($id, array_column($_SESSION['config_data_temp'], 'id'));
 // pokud index byl nalezen
-			if($index !== false) {
+			if ($index !== false) {
 // aktualizuje data v session
 				$_SESSION['config_data_temp'][$index]['property'] = $edit_property;
 				$_SESSION['config_data_temp'][$index]['value'] = $edit_value;
@@ -165,17 +169,17 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 	}
 }
 // editace konfigurace - ulozeni
-if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
+if ($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 	$sqlquery_edit = "UPDATE ConfigDU SET property = ?, value = ? WHERE id = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_edit);
-	if($stmt === false) {
+	if ($stmt === false) {
 		$_SESSION['error_message'] = 'Error in preparing SQL: ' . mysqli_error($connection) . '!';
 		header('Location: ./?v=config;f=alert');
 		exit;
 	}
 // projde vsechny zaznamy v session
-	if(isset($_SESSION['config_data_temp'])) {
-		foreach($_SESSION['config_data_temp'] as $data) {
+	if (isset($_SESSION['config_data_temp'])) {
+		foreach ($_SESSION['config_data_temp'] as $data) {
 			$id = $data['id'];
 			$edit_property = $data['property'];
 			$edit_value = $data['value'];
@@ -183,7 +187,7 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 			mysqli_stmt_bind_param($stmt, "ssi", $edit_property, $edit_value, $id);
 			$result_edit = mysqli_stmt_execute($stmt);
 // pokud doslo k chybe, vypise ji
-			if(!$result_edit) {
+			if (!$result_edit) {
 				$_SESSION['error_message'] = 'Error updating database: ' . mysqli_error($connection) . '!';
 				header('Location: ./?v=config;f=alert');
 				exit;
@@ -194,7 +198,7 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 // aktualizace running
 	$sqlquery_update_running = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
 	$result_update_running = mysqli_query($connection, $sqlquery_update_running);
-	if(!$result_update_running) {
+	if (!$result_update_running) {
 		$_SESSION['error_message'] = 'Error updating running table: ' . mysqli_error($connection) . '!';
 		header('Location: ./?v=config;f=alert');
 		exit;
@@ -206,9 +210,9 @@ if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
 // ========== end CONFIGDU
 // ========== begin CARDS
 // novy zaznam karty
-if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // ulozeni dat karty do db
-	if(isset($_POST['pridat-karta'])) {
+	if (isset($_POST['pridat-karta'])) {
 // ziskani dat z post
 		$nova_karta = $_POST['nova-karta'];
 		$nova_ctecka = $_POST['nova-ctecka'];
@@ -219,7 +223,7 @@ if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $
 // priprava sql dotazu
 		$sqlquery_novy_zaznam = "INSERT INTO Karty (Karta, Ctecka, CasPlan, Povoleni, Smazano, Pozn) VALUES (?, ?, ?, ?, ?, ?)";
 		$stmt = mysqli_prepare($connection, $sqlquery_novy_zaznam);
-		if(!$stmt) {
+		if (!$stmt) {
 // chyba pri priprave dotazu
 			$_SESSION['error_message'] = 'Error preparing query: ' . mysqli_error($connection);
 			header('Location: ./?v=cards&f=alert');
@@ -228,7 +232,7 @@ if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $
 // bindovani parametru
 		mysqli_stmt_bind_param($stmt, "ssssss", $nova_karta, $nova_ctecka, $novy_cas_plan, $nove_povoleni, $nove_smazano, $nove_pozn);
 // vykonani dotazu
-		if(mysqli_stmt_execute($stmt)) {
+		if (mysqli_stmt_execute($stmt)) {
 			header('Location: ./?v=cards');
 			exit;
 		} else {
@@ -242,15 +246,15 @@ if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $
 	}
 }
 // editace karty
-if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // nacteni dat karty do formulare
 	$cardid = $key_info;
 	$sqlquery_select = "SELECT * FROM Karty WHERE cardid = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_select);
 	mysqli_stmt_bind_param($stmt, "i", $cardid);
-	if(mysqli_stmt_execute($stmt)) {
+	if (mysqli_stmt_execute($stmt)) {
 		$result_select = mysqli_stmt_get_result($stmt);
-		if(mysqli_num_rows($result_select) > 0) {
+		if (mysqli_num_rows($result_select) > 0) {
 			$row_select = mysqli_fetch_array($result_select);
 		} else {
 			$_SESSION['error_message'] = 'Record not found!';
@@ -263,7 +267,7 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 		exit;
 	}
 // editace zaznamu karty do db
-	if(isset($_POST['edit-zaznam'])) {
+	if (isset($_POST['edit-zaznam'])) {
 		$cardid = $_POST['cardid'];
 		$edit_karta = $_POST['edit-karta'];
 		$edit_ctecka = $_POST['edit-ctecka'];
@@ -273,13 +277,13 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 		$edit_pozn = $_POST['edit-pozn'];
 		$sqlquery_edit = "UPDATE Karty SET Karta = ?, Ctecka = ?, CasPlan = ?, Povoleni = ?, Smazano = ?, Pozn = ? WHERE cardid = ?";
 		$stmt = mysqli_prepare($connection, $sqlquery_edit);
-		if(!$stmt) {
+		if (!$stmt) {
 			$_SESSION['error_message'] = 'Error preparing query: ' . mysqli_error($connection);
 			header('Location: ./?v=cards&f=alert');
 			exit;
 		}
 		mysqli_stmt_bind_param($stmt, "ssssssi", $edit_karta, $edit_ctecka, $edit_cas_plan, $edit_povoleni, $edit_smazano, $edit_pozn, $cardid);
-		if(mysqli_stmt_execute($stmt)) {
+		if (mysqli_stmt_execute($stmt)) {
 			header('Location: ./?v=cards');
 			exit;
 		} else {
@@ -291,13 +295,13 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 	}
 }
 // mazani karty
-if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond == $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond == $stat_cond_array['d']) {
 // smazani zaznamu karty
 	$cardid = $key_info;
 	$sqlquery_delete = "UPDATE Karty SET Smazano = 1 WHERE cardid = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_delete);
 	mysqli_stmt_bind_param($stmt, "i", $cardid);
-	if(mysqli_stmt_execute($stmt)) {
+	if (mysqli_stmt_execute($stmt)) {
 		header('Location: ./?v=cards');
 		exit;
 	} else {
@@ -312,13 +316,13 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 // funkce pro pripravu a provedeni dotazu
 function execute_query($connection, $query, $params, $types) {
 	$stmt = mysqli_prepare($connection, $query);
-	if(!$stmt) {
+	if (!$stmt) {
 		$_SESSION['error_message'] = 'Error preparing query: ' . mysqli_error($connection);
 		header('location: ./?v=timezones&f=alert');
 		exit;
 	}
 	mysqli_stmt_bind_param($stmt, $types, ...$params);
-	if(mysqli_stmt_execute($stmt)) {
+	if (mysqli_stmt_execute($stmt)) {
 		return $stmt;
 	} else {
 		$_SESSION['error_message'] = 'Error executing query: ' . mysqli_stmt_error($stmt);
@@ -331,7 +335,7 @@ function get_used_zone_numbers($connection) {
 	$query = "SELECT Cislo FROM CasovePlany";
 	$result = mysqli_query($connection, $query);
 	$used_numbers = [];
-	while($row = mysqli_fetch_assoc($result)) {
+	while ($row = mysqli_fetch_assoc($result)) {
 		$used_numbers[] = $row['Cislo'];
 	}
 	return $used_numbers;
@@ -355,8 +359,8 @@ function get_zone_name_by_number($connection, $zone_number) {
 	return $zone_name;
 }
 // novy zaznam casovezony
-if($key_view == $stat_view_array['t'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
-	if(isset($_POST['nova-zona'])) {
+if ($key_view == $stat_view_array['t'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+	if (isset($_POST['nova-zona'])) {
 // ziskani dat z POST
 		$nove_cislo = mysqli_real_escape_string($connection, $_POST['nove-cislo']);
 		$novy_nazev = mysqli_real_escape_string($connection, $_POST['novy-nazev']);
@@ -364,8 +368,8 @@ if($key_view == $stat_view_array['t'] && $key_cond == $stat_cond_array['p'] && $
 		$novy_stav = mysqli_real_escape_string($connection, $_POST['novy-stav']);
 		$times = ['mo' => [$_POST['mostart1v'], $_POST['moend1v'], $_POST['mostart2v'], $_POST['moend2v']], 'tu' => [$_POST['tustart1v'], $_POST['tuend1v'], $_POST['tustart2v'], $_POST['tuend2v']], 'we' => [$_POST['westart1v'], $_POST['weend1v'], $_POST['westart2v'], $_POST['weend2v']], 'th' => [$_POST['thstart1v'], $_POST['thend1v'], $_POST['thstart2v'], $_POST['thend2v']], 'fr' => [$_POST['frstart1v'], $_POST['frend1v'], $_POST['frstart2v'], $_POST['frend2v']], 'sa' => [$_POST['sastart1v'], $_POST['saend1v'], $_POST['sastart2v'], $_POST['saend2v']], 'su' => [$_POST['sustart1v'], $_POST['suend1v'], $_POST['sustart2v'], $_POST['suend2v']], 'ho' => [$_POST['hostart1v'], $_POST['hoend1v'], $_POST['hostart2v'], $_POST['hoend2v']]];
 		$times_flat = [];
-		foreach($times as $day_times) {
-			foreach($day_times as $time) {
+		foreach ($times as $day_times) {
+			foreach ($day_times as $time) {
 				$times_flat[] = mysqli_real_escape_string($connection, $time);
 			}
 		}
@@ -384,14 +388,14 @@ if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && 
 	$sqlquery_select = "SELECT * FROM CasovePlany WHERE Id_CasovyPlan = ?";
 	$stmt = execute_query($connection, $sqlquery_select, [$tzid], 'i');
 	$result_select = mysqli_stmt_get_result($stmt);
-	if(mysqli_num_rows($result_select) > 0) {
+	if (mysqli_num_rows($result_select) > 0) {
 		$row_select = mysqli_fetch_array($result_select);
 	} else {
 		$_SESSION['error_message'] = 'Record not found!';
 		header('location: ./?v=timezones;f=alert');
 		exit;
 	}
-	if(isset($_POST['edit-zona'])) {
+	if (isset($_POST['edit-zona'])) {
 // ziskani dat z POST
 		$id = mysqli_real_escape_string($connection, $_POST['id']);
 		$edit_cislo = mysqli_real_escape_string($connection, $_POST['edit-cislo']);
@@ -400,8 +404,8 @@ if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && 
 		$edit_stav = mysqli_real_escape_string($connection, $_POST['edit-stav']);
 		$times = ['mo' => [$_POST['mostart1v'], $_POST['moend1v'], $_POST['mostart2v'], $_POST['moend2v']], 'tu' => [$_POST['tustart1v'], $_POST['tuend1v'], $_POST['tustart2v'], $_POST['tuend2v']], 'we' => [$_POST['westart1v'], $_POST['weend1v'], $_POST['westart2v'], $_POST['weend2v']], 'th' => [$_POST['thstart1v'], $_POST['thend1v'], $_POST['thstart2v'], $_POST['thend2v']], 'fr' => [$_POST['frstart1v'], $_POST['frend1v'], $_POST['frstart2v'], $_POST['frend2v']], 'sa' => [$_POST['sastart1v'], $_POST['saend1v'], $_POST['sastart2v'], $_POST['saend2v']], 'su' => [$_POST['sustart1v'], $_POST['suend1v'], $_POST['sustart2v'], $_POST['suend2v']], 'ho' => [$_POST['hostart1v'], $_POST['hoend1v'], $_POST['hostart2v'], $_POST['hoend2v']]];
 		$times_flat = [];
-		foreach($times as $day_times) {
-			foreach($day_times as $time) {
+		foreach ($times as $day_times) {
+			foreach ($day_times as $time) {
 				$times_flat[] = mysqli_real_escape_string($connection, $time);
 			}
 		}
@@ -417,18 +421,18 @@ if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && 
 // ========== end TIMEZONES
 // ========== begin USERS
 // prace s uzivatelem
-if($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // novy zaznam uzivatele
-	if(isset($_POST['novy-uzivatel'])) {
+	if (isset($_POST['novy-uzivatel'])) {
 		$novy_user = $_POST['novy-user'];
 		$plain_password = $_POST['novy-md5'];
 		$novy_md5 = md5($plain_password);
 		$nova_prava = $_POST['nova-prava'];
 		$sqlquery_novy_zaznam = "INSERT INTO users (LogonName, MD5, rights) VALUES (?, ?, ?)";
 		$stmt = mysqli_prepare($connection, $sqlquery_novy_zaznam);
-		if($stmt) {
+		if ($stmt) {
 			mysqli_stmt_bind_param($stmt, "sss", $novy_user, $novy_md5, $nova_prava);
-			if(mysqli_stmt_execute($stmt)) {
+			if (mysqli_stmt_execute($stmt)) {
 				header('Location: ./?v=users');
 				exit;
 			} else {
@@ -444,14 +448,14 @@ if($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $
 	}
 }
 // editace uzivatele
-if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 // nacteni dat uzivatele do formulare
 	$id = $key_info;
 	$sqlquery_select = "SELECT * FROM users WHERE id = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_select);
-	if($stmt) {
+	if ($stmt) {
 		mysqli_stmt_bind_param($stmt, "i", $id);
-		if(mysqli_stmt_execute($stmt)) {
+		if (mysqli_stmt_execute($stmt)) {
 			$result_select = mysqli_stmt_get_result($stmt);
 			if(mysqli_num_rows($result_select) > 0) {
 				$row_select = mysqli_fetch_array($result_select);
@@ -471,7 +475,7 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 		exit;
 	}
 // editace zaznamu uzivatele
-	if(isset($_POST['edit-uzivatel'])) {
+	if (isset($_POST['edit-uzivatel'])) {
 		$id = $_POST['id'];
 		$edit_user = $_POST['edit-user'];
 		$edit_plain_password = $_POST['edit-md5'];
@@ -479,9 +483,9 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 		$edit_prava = $_POST['edit-prava'];
 		$sqlquery_edit = "UPDATE users SET LogonName = ?, MD5 = ?, rights = ? WHERE id = ?";
 		$stmt = mysqli_prepare($connection, $sqlquery_edit);
-		if($stmt) {
+		if ($stmt) {
 			mysqli_stmt_bind_param($stmt, "sssi", $edit_user, $edit_md5, $edit_prava, $id);
-			if(mysqli_stmt_execute($stmt)) {
+			if (mysqli_stmt_execute($stmt)) {
 				header('Location: ./?v=users');
 				exit;
 			} else {
@@ -497,14 +501,14 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 	}
 }
 // mazani uzivatele
-if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond == $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond == $stat_cond_array['d']) {
 // smazani zaznamu uzivatele
 	$id = $key_info;
 	$sqlquery_delete = "UPDATE users SET rights = 0 WHERE id = ?";
 	$stmt = mysqli_prepare($connection, $sqlquery_delete);
-	if($stmt) {
+	if ($stmt) {
 		mysqli_stmt_bind_param($stmt, "i", $id);
-		if(mysqli_stmt_execute($stmt)) {
+		if (mysqli_stmt_execute($stmt)) {
 			header('Location: ./?v=users');
 			exit;
 		} else {
@@ -519,6 +523,44 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 	}
 }
 // ========== end USERS
+// ========== begin QUICK REBOOT
+// kontrola, jestli byl odkaz kliknut
+if (isset($_GET['reboot'])) {
+// aktualizace tabulky 'running'
+	$sqlquery_update_running = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
+	$result_update_running = mysqli_query($connection, $sqlquery_update_running);
+	if (!$result_update_running) {
+		$_SESSION['error_message'] = 'Error updating running table: ' . mysqli_error($connection) . '!';
+		header('Location: ./?v=more;f=alert');
+		exit;
+	} else {
+// uspesna aktualizace, presmerovani zpet nebo jina akce
+		$_SESSION['error_message'] = 'Unit restart has been set!';
+		header('Location: ./?v=more;f=alert');
+		exit;
+	}
+}
+// ========== end QUICK REBOOT
+// ========== begin LIMITACE
+$sqlquery_select = "SELECT value FROM ConfigDU WHERE property = 'maxRows'";
+$result_select = mysqli_query($connection, $sqlquery_select);
+// kontrola, zda byl dotaz uspesny
+if (!$result_select) {
+	$_SESSION['error_message'] = 'Error updating dates: ' . mysqli_error($connection) . '!';
+	header('Location: ./?v=more;f=alert');
+	exit;
+} else {
+	if (mysqli_num_rows($result_select) > 0) {
+		$row = mysqli_fetch_assoc($result_select);
+		$max_rows_value = $row['value'];
+	} else {
+		$max_rows_value = '1000';
+	}
+}
+// ========== end LIMITACE
+// ========== begin STATUS
+$status_value = '';
+// ========== end STATUS
 ?><!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -537,16 +579,20 @@ echo fileVersioning('./css/global.css');
 	<link rel="stylesheet" type="text/css" href="<?php
 echo fileVersioning('./css/style.css');
 ?>" media="screen">
-<script src="./lib/jquery-3.7.1.min.js"></script>
-<script src="./lib/jquery-ui.min.js"></script>
-<link rel="stylesheet" type="text/css" href="./lib/jquery-ui.min.css" media="screen">
-<script src="./lib/datatables.min.js"></script>
-<script src="./lib/dataTables.buttons.min.js"></script>
-<script src="./js/meritaccess-head.min.js"></script>
+	<script src="./lib/jquery-3.7.1.min.js"></script>
+	<script src="./lib/jquery-ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="./lib/jquery-ui.min.css" media="screen">
+	<script src="./lib/datatables.min.js"></script>
+	<script src="./lib/dataTables.buttons.min.js"></script>
+	<script src="./lib/jquery.fancybox.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="./lib/jquery.fancybox.min.css" media="screen">
+	<script src="<?php
+echo fileVersioning('./js/meritaccess-head.min.js');
+?>"></script>
 </head>
 <body id="meritaccess">
 <?php
-if($key_fact == $stat_fact_array['z']) {
+if ($key_fact == $stat_fact_array['z']) {
 ?>
 <div id="error-info">
 	<p><?php
@@ -560,46 +606,50 @@ if($key_fact == $stat_fact_array['z']) {
 <div id="main">
 	<div id="header">
 		<h1>MeritAccess</h1>
-		<p id="logo"><a href="./">MeritAccess</a></p>
-<?php
-// jiny pohled nez login
-if($key_view != $stat_view_array['l']) {
-?>
+		<p id="logo"><a href="./">MeritAccess<span class="local"><?php
+// echo status
+	echo $status_value;
+?></span></a></p>
 		<ul id="header-nav">
 <?php
-	if($key_view == $stat_view_array['c']) {
+if ($key_view == $stat_view_array['c']) {
 ?>
 			<li id="add-card"><a href="./?v=cards;s=past">Card</a></li>
 <?php
-	}
-	if($key_view == $stat_view_array['u']) {
+}
+if ($key_view == $stat_view_array['u']) {
 ?>
 			<li id="add-user"><a href="./?v=users;s=past">User</a></li>
 <?php
-	}
-	if($key_view == $stat_view_array['t']) {
+}
+if ($key_view == $stat_view_array['t']) {
 ?>
 			<li id="add-timezone"><a href="./?v=timezones;s=past">Timezone</a></li>
 <?php
-	}
-	if($key_view == $stat_view_array['o']) {
-		if(isset($_SESSION['config_data_temp'])) {
+}
+if ($key_view == $stat_view_array['o']) {
+	if (isset($_SESSION['config_data_temp'])) {
 ?>
 			<li id="save"><a href="./?v=config;s=past" onclick="return confirm('Are you sure you want to commit all changes?');">Confirm</a></li>
 <?php
-		}
 	}
+}
+?>
+			<li id="info"><a href="#infobox" id="infobtn">Info</a></li>
+<?php
+// jiny pohled nez login
+if ($key_view != $stat_view_array['l']) {
 ?>
 			<li id="logout"><a href="./?v=drop">Logout</a></li>
-		</ul>
 <?php
 }
 ?>
+		</ul>
 	</div>
 	<div id="content">
 <?php
 // ========== begin POHLED LOGIN
-if($key_view == $stat_view_array['l']) {
+if ($key_view == $stat_view_array['l']) {
 ?>
 		<h2>Login</h2>
 		<p>Enter your login details, username and password.</p>
@@ -607,16 +657,19 @@ if($key_view == $stat_view_array['l']) {
 			<form action="<?php
 echo $url;
 ?>" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off">
-				<label for="forusername">Username: </label><input type="text" id="forusername" name="username" value="" required="required" autocapitalize="off">
-				<label for="forpassword">Password: </label><input type="password" id="forpassword" name="password" value="" required="required" autocapitalize="off">
-				<label for=""></label><button type="submit" name="login">Login</button>
+				<label for="forusername">Username: </label>
+				<input type="text" id="forusername" name="username" value="" required="required" autocapitalize="off">
+				<label for="forpassword">Password: </label>
+				<input type="password" id="forpassword" name="password" value="" required="required" autocapitalize="off">
+				<div></div>
+				<button type="submit" name="login">Login</button>
 			</form>
 		</div>
 <?php
 }
 // ========== end POHLED LOGIN
 // ========== begin POHLED HOME
-if($key_view == $stat_view_array['h']) {
+if ($key_view == $stat_view_array['h']) {
 ?>
 		<h2>Dashboard</h2>
 		<p>Welcome</p>
@@ -630,40 +683,40 @@ if($key_view == $stat_view_array['h']) {
 }
 // ========== end POHLED HOME
 // ========== begin POHLED MORE
-if($key_view == $stat_view_array['m']) {
+if ($key_view == $stat_view_array['m']) {
 ?>
 		<h2>More</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; More</p>
 		<ul id="more">
 			<li><strong id="more-title-first">Administration</strong></li>
-			<li id="config"><a href="./?v=config">Config</a></li>
+			<li id="config"><a href="./?v=config">Configuration</a></li>
 			<li id="running"><a href="./?v=running">Running</a></li>
 			<li id="timezones"><a href="./?v=timezones">Timezones</a></li>
 			<li><strong>New items</strong></li>
 			<li id="add-card"><a href="./?v=cards;s=past">New card</a></li>
 			<li id="add-user"><a href="./?v=users;s=past">New user</a></li>
 			<li id="add-timezone"><a href="./?v=timezones;s=past">New timezone</a></li>
+			<li><strong>Quick action</strong></li>
+			<li id="reload"><a href="./?reboot=1" onclick="return confirm('Are you sure you want to reboot the unit?');">Restart the unit</a></li>
 			<li><strong>Information</strong></li>
 			<li id="logs"><a href="./?v=logs">Logs</a></li>
-			<li id="version"><a href="./?v=more">Version <?php
-echo date('y.m.di.H.s', $update_datetime);
-?></a></li>
 		</ul>
 <?php
 }
 // ========== end POHLED MORE
 // ========== begin POHLED ACCESS
-if($key_view == $stat_view_array['a']) {
+if ($key_view == $stat_view_array['a']) {
 ?>
 		<h2>Access</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; Access</p>
 <?php
 // sql dotaz #1
-	$sqlquery_1 = "SELECT Kdy, Karta, Ctecka, StavZpracovani, Pozn, Povoleni, Smazano, cardid FROM AccessDetails ORDER BY kdy DESC LIMIT 1000";
+	//$sqlquery_1 = "SELECT Kdy, Karta, Ctecka, StavZpracovani, Pozn, Povoleni, Smazano, cardid FROM AccessDetails ORDER BY kdy DESC LIMIT 1000";
+	$sqlquery_1 = "SELECT Kdy, Karta, Ctecka, StavZpracovani, Pozn, Povoleni, Smazano, cardid FROM AccessDetails LIMIT $max_rows_value";
 // ochrana dotazu #1
-	if($result_1 = mysqli_query($connection, $sqlquery_1)) {
+	if ($result_1 = mysqli_query($connection, $sqlquery_1)) {
 // roztrhani vysledku sql dotazu #1
-		if(mysqli_num_rows($result_1) > 0) {
+		if (mysqli_num_rows($result_1) > 0) {
 ?>
 		<div id="table-container">
 			<table id="data-table">
@@ -680,15 +733,16 @@ if($key_view == $stat_view_array['a']) {
 				<tbody>
 <?php
 // cyklus pro vypis dat #1
-			while($row_1 = mysqli_fetch_array($result_1)) {
+			while ($row_1 = mysqli_fetch_array($result_1)) {
+				echo "\t\t\t\t\t";
 				echo '<tr';
-				if($row_1['Smazano'] == 1) {
+				if ($row_1['Smazano'] == 1) {
 					echo ' class="tr-deleted"';
 				}
 				echo '>';
 				echo '<td>' . $row_1['Kdy'] . '</td>';
 				echo '<td>';
-				if(is_null($row_1['cardid'])) {
+				if (is_null($row_1['cardid'])) {
 					$row_1_edit = str_replace(' ', '-', $row_1['Karta']);
 					echo '<a href="./?v=cards;s=past;i=' . $row_1_edit . '">' . $row_1['Karta'] . '</a>';
 				} else {
@@ -698,14 +752,14 @@ if($key_view == $stat_view_array['a']) {
 				echo '<td class="td-centered">' . $row_1['Ctecka'] . '</td>';
 				echo '<td class="td-centered">' . $row_1['StavZpracovani'] . '</td>';
 				echo '<td>';
-				if(is_null($row_1['Pozn'])) {
+				if (is_null($row_1['Pozn'])) {
 					echo 'Unknown';
 				} else {
 					echo $row_1['Pozn'];
 				}
 				echo '</td>';
 				echo '<td class="td-centered">';
-				if(is_null($row_1['Povoleni'])) {
+				if (is_null($row_1['Povoleni'])) {
 					echo 'Unknown';
 				} else {
 					echo $row_1['Povoleni'];
@@ -731,17 +785,17 @@ if($key_view == $stat_view_array['a']) {
 // ========== end POHLED ACCESS
 // ========== begin POHLED CARDS
 // ========== begin POHLED CARDS - LIST
-if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Cards</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; Cards</p>
 <?php
 // sql dotaz #2
-$sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
+$sqlquery_2 = "SELECT * FROM Karty LIMIT $max_rows_value";
 // ochrana dotazu #2
-	if($result_2 = mysqli_query($connection, $sqlquery_2)) {
+	if ($result_2 = mysqli_query($connection, $sqlquery_2)) {
 // roztrhani vysledku sql dotazu #2
-		if(mysqli_num_rows($result_2) > 0) {
+		if (mysqli_num_rows($result_2) > 0) {
 ?>
 		<div id="table-container">
 			<table id="data-table">
@@ -759,9 +813,10 @@ $sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
 				<tbody>
 <?php
 // cyklus pro vypis dat #2
-			while($row_2 = mysqli_fetch_array($result_2)) {
+			while ($row_2 = mysqli_fetch_array($result_2)) {
+				echo "\t\t\t\t\t";
 				echo '<tr';
-				if($row_2['Smazano'] == 1) {
+				if ($row_2['Smazano'] == 1) {
 					echo ' class="tr-deleted"';
 				}
 				echo '>';
@@ -770,7 +825,7 @@ $sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
 				echo '<td class="td-centered">';
 				$zone_number_2 = $row_2['CasPlan'];
 				$zone_name_2 = get_zone_name_by_number($connection, $zone_number_2);
-				if($zone_name_2) {
+				if ($zone_name_2) {
 					echo $zone_name_2;
 					echo ' [' . $zone_number_2 . ']';
 				} else {
@@ -800,7 +855,7 @@ $sqlquery_2 = "SELECT * FROM Karty LIMIT 1000";
 }
 // ========== end POHLED CARDS - LIST
 // ========== begin POHLED CARDS - NOVA KARTA
-if($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>New card</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=cards" onclick="return confirm('Are you sure you want to leave without saving?');">Cards</a> &rsaquo; New card</p>
@@ -811,7 +866,7 @@ echo $url;
 				<input type="hidden" name="nove-smazano" value="0">
 				<label for="fornovakarta">Card <span class="required">*</span></label>
 				<input type="text" id="fornovakarta" name="nova-karta" value="<?php
-	if(!empty($key_info)) {
+	if (!empty($key_info)) {
 		$key_info = str_replace('-', ' ', $key_info);
 		echo $key_info;
 	}
@@ -828,10 +883,10 @@ echo $url;
 					<option value="0" selected="selected">No timezone [0]</option>
 <?php
 // vypsani moznosti do select
-while($row_timezone = mysqli_fetch_assoc($result_timezone)) {
+while ($row_timezone = mysqli_fetch_assoc($result_timezone)) {
 	$timezone_value = $row_timezone['Cislo'];
 	$timezone_name = $row_timezone['Nazev'];
-	echo "					";
+	echo "\t\t\t\t\t";
 	echo '<option value="' . $timezone_value . '">' . $timezone_name . ' [' . $timezone_value . ']</option>';
 	echo "\n";
 }
@@ -851,7 +906,7 @@ while($row_timezone = mysqli_fetch_assoc($result_timezone)) {
 }
 // ========== end POHLED CARDS - NOVA KARTA
 // ========== begin POHLED CARDS - EDITACE KARTY
-if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Edit card</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=cards" onclick="return confirm('Are you sure you want to leave without saving?');">Cards</a> &rsaquo; Edit card</p>
@@ -860,7 +915,7 @@ if($key_view == $stat_view_array['c'] && $key_cond != $stat_cond_array['p'] && $
 echo $url;
 ?>" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off">
 				<input type="hidden" name="cardid" value="<?php
-echo $row_select['cardid'];
+echo htmlspecialchars($row_select['cardid']);
 ?>">
 				<label for="foreditkarta">Card (read only)</label>
 				<input type="text" id="foreditkarta" name="edit-karta" value="<?php
@@ -880,12 +935,12 @@ echo $row_select['Ctecka'];
 					<option value="0">No timezone [0]</option>
 <?php
 // vypsani moznosti do select
-	while($row_timezone = mysqli_fetch_assoc($result_timezone)) {
+	while ($row_timezone = mysqli_fetch_assoc($result_timezone)) {
 		$timezone_value = $row_timezone['Cislo'];
 		$timezone_name = $row_timezone['Nazev'];
-		echo "					";
+		echo "\t\t\t\t\t";
 		echo '<option value="' . $timezone_value . '"';
-		if($row_select['CasPlan'] == $timezone_value) {
+		if ($row_select['CasPlan'] == $timezone_value) {
 			echo ' selected="selected"';
 		}
 		echo '>' . $timezone_name . ' [' . $timezone_value . ']</option>';
@@ -902,12 +957,12 @@ echo $row_select['Povoleni'];
 					<option value="">&ndash;</option>
 <?php
 	$row_selected = $row_select['Smazano'];
-	if($row_selected == '0') {
+	if ($row_selected == '0') {
 ?>
 					<option value="0" selected="selected">Enabled</option>
 					<option value="1">Block</option>
 <?php
-	} elseif($row_selected == '1') {
+	} elseif ($row_selected == '1') {
 ?>
 					<option value="0">Enable</option>
 					<option value="1" selected="selected">Blocked</option>
@@ -936,17 +991,17 @@ echo $row_select['Pozn'];
 // ========== end POHLED CARDS
 // ========== begin POHLED TIMEZONES
 // ========== begin POHLED TIMEZONES - LIST
-if($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Timezones</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Timezones</p>
 <?php
 // sql dotaz #7
-	$sqlquery_7 = "SELECT * FROM CasovePlany ORDER BY Cislo ASC LIMIT 1000";
+	$sqlquery_7 = "SELECT * FROM CasovePlany ORDER BY Cislo ASC LIMIT $max_rows_value";
 // ochrana dotazu #7
-	if($result_7 = mysqli_query($connection, $sqlquery_7)) {
+	if ($result_7 = mysqli_query($connection, $sqlquery_7)) {
 // roztrhani vysledku sql dotazu #7
-		if(mysqli_num_rows($result_7) > 0) {
+		if (mysqli_num_rows($result_7) > 0) {
 ?>
 		<div id="table-container">
 			<table id="data-table">
@@ -962,10 +1017,10 @@ if($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $
 				<tbody>
 <?php
 // cyklus pro vypis dat #7
-			while($row_7 = mysqli_fetch_array($result_7)) {
+			while ($row_7 = mysqli_fetch_array($result_7)) {
 				$row_status_7 = ['0' => 'No system plan', '1' => 'Silent open', '2' => 'Pulz', '3' => 'Reverz'];
 				echo '<tr';
-				if($row_7['Smazano'] == 1) {
+				if ($row_7['Smazano'] == 1) {
 					echo ' class="tr-deleted"';
 				}
 				echo '>';
@@ -993,7 +1048,7 @@ if($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $
 }
 // ========== end POHLED TIMEZONES - LIST
 // ========== begin POHLED TIMEZONES - NOVA TIMEZONE
-if($key_view == $stat_view_array['t'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['t'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Timezones</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; <a href="./?v=timezones" onclick="return confirm('Are you sure you want to leave without saving?');">Timezones</a> &rsaquo; New timezone</p>
@@ -1005,8 +1060,8 @@ echo $url;
 				<select id="nove-cislo" name="nove-cislo" required="required">
 <?php
 	$free_numbers = get_free_zone_numbers($connection);
-	foreach($free_numbers as $number) {
-		echo "					";
+	foreach ($free_numbers as $number) {
+		echo "\t\t\t\t\t";
 		echo '<option value="' . $number . '">' . $number . '</option>';
 		echo "\n";
 	}
@@ -1044,37 +1099,38 @@ echo $url;
 	$timezones_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Holiday'];
 	$timezones_days_short = ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su', 'ho'];
 // cyklus pro generovani
-	for($i = 0;$i < 8;$i++) {
+	for ($i = 0;$i < 8;$i++) {
 // definice hodnot
 		$timezones_day_week = $timezones_days[$i];
 		$timezones_input_var = $timezones_days_short[$i];
-		echo '				<div></div>';
-		echo "\n";
-		echo '				<div class="matrix-4">';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'start1">From <span class="required">*</span></label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'end1">To <span class="required">*</span></label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'start2">From</label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'end2">To</label>';
-		echo "\n";
-		echo '				</div>';
-		echo "\n";
-		echo '				<label for="">' . $timezones_day_week . '</label>';
-		echo "\n";
-		echo '				<div class="matrix-4">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'start1" name="' . $timezones_input_var . 'start1v" value="" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'end1" name="' . $timezones_input_var . 'end1v" value="" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'start2" name="' . $timezones_input_var . 'start2v" value="" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'end2" name="' . $timezones_input_var . 'end2v" value="" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
-		echo "\n";
-		echo '				</div>';
+		echo "\t\t\t\t";
+		echo '<div></div>';
+		echo "\n\t\t\t\t";
+		echo '<div class="matrix-4">';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'start1">From <span class="required">*</span></label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'end1">To <span class="required">*</span></label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'start2">From</label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'end2">To</label>';
+		echo "\n\t\t\t\t";
+		echo '</div>';
+		echo "\n\t\t\t\t";
+		echo '<label for="">' . $timezones_day_week . '</label>';
+		echo "\n\t\t\t\t";
+		echo '<div class="matrix-4">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'start1" name="' . $timezones_input_var . 'start1v" value="" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'end1" name="' . $timezones_input_var . 'end1v" value="" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'start2" name="' . $timezones_input_var . 'start2v" value="" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'end2" name="' . $timezones_input_var . 'end2v" value="" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
+		echo "\n\t\t\t\t";
+		echo '</div>';
 		echo "\n";
 	}
 ?>
@@ -1088,7 +1144,7 @@ echo $url;
 }
 // ========== end POHLED TIMEZONES - NOVA TIMEZONE
 // ========== begin POHLED TIMEZONES - EDITACE TIMEZONE
-if($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Timezones</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; <a href="./?v=timezones" onclick="return confirm('Are you sure you want to leave without saving?');">Timezones</a> &rsaquo; Edit timezone</p>
@@ -1104,11 +1160,11 @@ echo $row_select['Id_CasovyPlan'];
 <?php
 	$free_numbers = get_free_zone_numbers($connection);
 	$current_number = $row_select['Cislo'];
-	echo "					";
+	echo "\t\t\t\t\t";
 	echo '<option value="' . $current_number . '" selected="selected">' . $current_number . '</option>';
 	echo "\n";
-	foreach($free_numbers as $number) {
-		echo "					";
+	foreach ($free_numbers as $number) {
+		echo "\t\t\t\t\t";
 		echo '<option value="' . $number . '">' . $number . '</option>';
 		echo "\n";
 	}
@@ -1126,28 +1182,28 @@ echo $row_select['Popis'];
 				<select id="foreditstate" name="edit-stav" required="required">
 <?php
 	$row_selected = $row_select['RezimOtevirani'];
-	if($row_selected == '0') {
+	if ($row_selected == '0') {
 ?>
 					<option value="0" selected="selected">No system plan</option>
 					<option value="1">Silent open</option>
 					<option value="2">Puls</option>
 					<option value="3">Reverz</option>
 					<?php
-	} elseif($row_selected == '1') {
+	} elseif ($row_selected == '1') {
 ?>
 					<option value="0">No system plan</option>
 					<option value="1" selected="selected">Silent open</option>
 					<option value="2">Puls</option>
 					<option value="3">Reverz</option>
 					<?php
-	} elseif($row_selected == '2') {
+	} elseif ($row_selected == '2') {
 ?>
 					<option value="0">No system plan</option>
 					<option value="1">Silent open</option>
 					<option value="2" selected="selected">Puls</option>
 					<option value="3">Reverz</option>
 <?php
-	} elseif($row_selected == '3') {
+	} elseif ($row_selected == '3') {
 ?>
 					<option value="0">No system plan</option>
 					<option value="1">Silent open</option>
@@ -1186,7 +1242,7 @@ echo $row_select['Popis'];
 	$timezones_days_short = ['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su', 'ho'];
 	$timezones_days_sql = ['Po', 'Ut', 'St', 'Ct', 'Pa', 'So', 'Ne', 'Svatky'];
 // cyklus pro generovani
-	for($i = 0;$i < 8;$i++) {
+	for ($i = 0;$i < 8;$i++) {
 // definice hodnot
 		$timezones_day_week = $timezones_days[$i];
 		$timezones_input_var = $timezones_days_short[$i];
@@ -1195,33 +1251,34 @@ echo $row_select['Popis'];
 		$end1 = isset($row_select[$timezones_day_sql . '_PrvniKonec']) ? $row_select[$timezones_day_sql . '_PrvniKonec'] : '';
 		$start2 = isset($row_select[$timezones_day_sql . '_DruhyZacatek']) ? $row_select[$timezones_day_sql . '_DruhyZacatek'] : '';
 		$end2 = isset($row_select[$timezones_day_sql . '_DruhyKonec']) ? $row_select[$timezones_day_sql . '_DruhyKonec'] : '';
-		echo '				<div></div>';
-		echo "\n";
-		echo '				<div class="matrix-4">';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'start1">From <span class="required">*</span></label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'end1">To <span class="required">*</span></label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'start2">From</label>';
-		echo "\n";
-		echo '					<label for="' . $timezones_input_var . 'end2">To</label>';
-		echo "\n";
-		echo '				</div>';
-		echo "\n";
-		echo '				<label for="">' . $timezones_day_week . '</label>';
-		echo "\n";
-		echo '				<div class="matrix-4">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'start1" name="' . $timezones_input_var . 'start1v" value="' . htmlspecialchars($start1) . '" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'end1" name="' . $timezones_input_var . 'end1v" value="' . htmlspecialchars($end1) . '" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'start2" name="' . $timezones_input_var . 'start2v" value="' . htmlspecialchars($start2) . '" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
-		echo "\n";
-		echo '					<input type="text" id="' . $timezones_input_var . 'end2" name="' . $timezones_input_var . 'end2v" value="' . htmlspecialchars($end2) . '" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
-		echo "\n";
-		echo '				</div>';
+		echo "\t\t\t\t";
+		echo '<div></div>';
+		echo "\n\t\t\t\t";
+		echo '<div class="matrix-4">';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'start1">From <span class="required">*</span></label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'end1">To <span class="required">*</span></label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'start2">From</label>';
+		echo "\n\t\t\t\t\t";
+		echo '<label for="' . $timezones_input_var . 'end2">To</label>';
+		echo "\n\t\t\t\t";
+		echo '</div>';
+		echo "\n\t\t\t\t";
+		echo '<label for="">' . $timezones_day_week . '</label>';
+		echo "\n\t\t\t\t";
+		echo '<div class="matrix-4">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'start1" name="' . $timezones_input_var . 'start1v" value="' . htmlspecialchars($start1) . '" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'end1" name="' . $timezones_input_var . 'end1v" value="' . htmlspecialchars($end1) . '" placeholder="HH:MM:SS – required" required="required" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'start2" name="' . $timezones_input_var . 'start2v" value="' . htmlspecialchars($start2) . '" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
+		echo "\n\t\t\t\t\t";
+		echo '<input type="text" id="' . $timezones_input_var . 'end2" name="' . $timezones_input_var . 'end2v" value="' . htmlspecialchars($end2) . '" placeholder="HH:MM:SS – optional" class="time-hhmmss">';
+		echo "\n\t\t\t\t";
+		echo '</div>';
 		echo "\n";
 	}
 ?>
@@ -1237,17 +1294,17 @@ echo $row_select['Popis'];
 // ========== end POHLED TIMEZONES
 // ========== begin POHLED USERS
 // ========== begin POHLED USERS - LIST
-if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Users</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; Users</p>
 <?php
 // sql dotaz #4
-	$sqlquery_4 = "SELECT * FROM users LIMIT 1000";
+	$sqlquery_4 = "SELECT * FROM users";
 // ochrana dotazu #4
-	if($result_4 = mysqli_query($connection, $sqlquery_4)) {
+	if ($result_4 = mysqli_query($connection, $sqlquery_4)) {
 // roztrhani vysledku sql dotazu #4
-		if(mysqli_num_rows($result_4) > 0) {
+		if (mysqli_num_rows($result_4) > 0) {
 ?>
 		<div id="table-container">
 			<table id="data-table">
@@ -1261,9 +1318,10 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 				<tbody>
 <?php
 // cyklus pro vypis dat #4
-			while($row_4 = mysqli_fetch_array($result_4)) {
+			while ($row_4 = mysqli_fetch_array($result_4)) {
+				echo "\t\t\t\t\t";
 				echo '<tr';
-				if($row_4['rights'] == 0) {
+				if ($row_4['rights'] == 0) {
 					echo ' class="tr-deleted"';
 				}
 				echo '>';
@@ -1289,7 +1347,7 @@ if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $
 }
 // ========== end POHLED USERS - LIST
 // ========== begin POHLED USERS - NOVY USER
-if($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond == $stat_cond_array['p'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 	?>
 		<h2>New user</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=users" onclick="return confirm('Are you sure you want to leave without saving?');">Users</a> &rsaquo; New user</p>
@@ -1314,7 +1372,7 @@ echo $url;
 }
 // ========== end POHLED USERS - NOVY USER
 // ========== begin POHLED USERS - EDITACE USERA
-if($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
+if ($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && $key_cond == $stat_cond_array['e'] && $key_cond != $stat_cond_array['d']) {
 ?>
 		<h2>Edit user</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=users" onclick="return confirm('Are you sure you want to leave without saving?');">Users</a> &rsaquo; Edit user</p>
@@ -1338,12 +1396,12 @@ echo $row_select['LogonName'];
 					<option value="">&ndash;</option>
 <?php
 	$row_selected = $row_select['rights'];
-	if($row_selected == '255') {
+	if ($row_selected == '255') {
 ?>
 					<option value="255" selected="selected">Enabled</option>
 					<option value="0">Block</option>
 <?php
-	} elseif($row_selected == '0') {
+	} elseif ($row_selected == '0') {
 ?>
 					<option value="255">Enable</option>
 					<option value="0" selected="selected">Blocked</option>
@@ -1369,24 +1427,22 @@ echo $row_select['LogonName'];
 // ========== begin POHLED CONFIGDU
 // ========== begin POHLED CONFIGDU - LIST
 // pohled pro potvrzeni vsech zmen
-if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['p']) {
+if ($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e'] && $key_cond != $stat_cond_array['p']) {
 ?>
-		<h2>Configuration</h2>
-		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Configuration</p>
+	<h2>Configuration</h2>
+	<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Configuration</p>
+	<div id="table-container">
 <?php
-// sql dotaz #5
-	$sqlquery_5 = "SELECT * FROM ConfigDU LIMIT 1000";
-// ochrana dotazu #5
-	if($result_5 = mysqli_query($connection, $sqlquery_5)) {
-// roztrhani vysledku sql dotazu #5
-		if(mysqli_num_rows($result_5) > 0) {
-			while($row_5 = mysqli_fetch_array($result_5)) {
-// pridani radku do pole
+// nacti aktualni konfiguraci z databaze
+	$config_data = array();
+	$sqlquery_5 = "SELECT * FROM ConfigByGroups";
+	if ($result_5 = mysqli_query($connection, $sqlquery_5)) {
+		if (mysqli_num_rows($result_5) > 0) {
+			while ($row_5 = mysqli_fetch_array($result_5)) {
 				$config_data[] = $row_5;
 			}
-// ulozeni dat do session
+// uloz aktualni konfiguraci do session
 			$_SESSION['config_data'] = $config_data;
-// uvolneni pameti #5
 			mysqli_free_result($result_5);
 		} else {
 			echo '<p>No data to display!</p>';
@@ -1394,43 +1450,57 @@ if($key_view == $stat_view_array['o'] && $key_cond != $stat_cond_array['e'] && $
 	} else {
 		echo '<p>Unable to process query! "' . $sqlquery_5 . '", Error! ' . mysqli_error($connection) . '</p>';
 	}
-?>
-		<div id="table-container">
-			<table id="data-table">
-				<thead>
-					<tr>
-						<th class="th-3">Property</th>
-						<th class="th-3">Value</th>
-						<th class="th-3">Management</th>
-					</tr>
-				</thead>
-				<tbody>
-<?php
-// urci, ktera pole pouzit pro vypis do tabulky
+// urci, ktera data pouzit pro vypis do tabulky
 	$config_data_view = isset($_SESSION['config_data_temp']) ? $_SESSION['config_data_temp'] : $_SESSION['config_data'];
 // pokud jsou data ulozena v session
-	if(!empty($config_data_view)) {
-// vypsat data ulozena v session
-		foreach($config_data_view as $row_5) {
-			echo '<tr>';
-			echo '<td class="td-upper">' . $row_5['property'] . '</td>';
-			echo '<td class="td-centered">' . $row_5['value'] . '</td>';
-			echo '<td><a href="./?v=config;s=edit;i=' . $row_5['id'] . '">Edit</a></td>';
-			echo '</tr>';
+	if (!empty($config_data_view)) {
+// rozdel data podle groupname
+		$grouped_data = [];
+		foreach ($config_data_view as $row_5) {
+			$grouped_data[$row_5['groupname']][] = $row_5;
+		}
+// vypis tabulky pro kazdou skupinu
+		foreach ($grouped_data as $groupname => $group_data) {
+			echo '<p class="data-table-cap"><span class="cap-plus"></span>' . htmlspecialchars($groupname) . '</p>';
 			echo "\n";
+			echo '<div class="table-container-scroll">';
+			echo "\n";
+			echo '<table class="data-table-coll">';
+			echo '<thead>';
+			echo '<tr>';
+			echo '<th class="th-3">Property</th>';
+			echo '<th class="th-3">Value</th>';
+			echo '<th class="th-3">Management</th>';
+			echo '</tr>';
+			echo '</thead>';
+			echo '<tbody>';
+			echo "\n";
+// vypis radky tabulky pro danou skupinu
+			foreach ($group_data as $row_5) {
+				echo '<tr>';
+				echo '<td class="td-upper">' . htmlspecialchars($row_5['property']) . '</td>';
+				echo '<td class="td-centered">' . htmlspecialchars($row_5['value']) . '</td>';
+				echo '<td><a href="./?v=config;s=edit;i=' . $row_5['id'] . '">Edit</a></td>';
+				echo '</tr>';
+				echo "\n";
+			}
+			echo '</tbody>';
+			echo "\n";
+			echo '</table>';
+			echo "\n";
+			echo '</div>';
 		}
 	} else {
 		echo '<p>No data in SESSION!</p>';
 	}
 ?>
-				</tbody>
-			</table>
-		</div>
+		<hr>
+	</div>
 <?php
 }
 // ========== end POHLED CONFIGDU - LIST
 // ========== begin POHLED CONFIGDU - EDITACE KONFIGURACE
-if($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
+if ($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
 ?>
 		<h2>Edit configuration</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; <a href="./?v=config" onclick="return confirm('Are you sure you want to leave without saving?');">Configuration</a> &rsaquo; Edit configuration</p>
@@ -1440,11 +1510,11 @@ echo $url;
 ?>" method="post" enctype="application/x-www-form-urlencoded" autocomplete="off">
 <?php
 // pokud pole config_data existuje v session
-	if(isset($_SESSION['config_data'])) {
+	if (isset($_SESSION['config_data'])) {
 // projit vsechny polozky pole
-		foreach($_SESSION['config_data'] as $row_5) {
+		foreach ($_SESSION['config_data'] as $row_5) {
 // pokud se ID polozky shoduje s ID, ktere chcete ponechat
-			if($row_5['id'] == $key_info) {
+			if ($row_5['id'] == $key_info) {
 ?>
 				<input type="hidden" name="id" value="<?php
 echo $row_5['id'];
@@ -1480,17 +1550,17 @@ echo $row_5['regex'];
 // ========== end POHLED CONFIGDU - EDITACE KONFIGURACE
 // ========== end POHLED CONFIGDU
 // ========== begin POHLED RUNNING
-if($key_view == $stat_view_array['r']) {
+if ($key_view == $stat_view_array['r']) {
 ?>
 		<h2>Running</h2>
 		<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Running</p>
 <?php
 // sql dotaz #3
-	$sqlquery_3 = "SELECT * FROM running order by lastchange DESC LIMIT 1000";
+	$sqlquery_3 = "SELECT * FROM running order by lastchange DESC";
 // ochrana dotazu #3
-	if($result_3 = mysqli_query($connection, $sqlquery_3)) {
+	if ($result_3 = mysqli_query($connection, $sqlquery_3)) {
 // roztrhani vysledku sql dotazu #3
-		if(mysqli_num_rows($result_3) > 0) {
+		if (mysqli_num_rows($result_3) > 0) {
 ?>
 		<div id="table-container">
 			<table id="data-table">
@@ -1504,7 +1574,7 @@ if($key_view == $stat_view_array['r']) {
 				<tbody>
 <?php
 // cyklus pro vypis dat #3
-			while($row_3 = mysqli_fetch_array($result_3)) {
+			while ($row_3 = mysqli_fetch_array($result_3)) {
 				echo '<tr>';
 				echo '<td>' . $row_3['property'] . '</td>';
 				echo '<td>' . $row_3['value'] . '</td>';
@@ -1528,22 +1598,22 @@ if($key_view == $stat_view_array['r']) {
 }
 // ========== end POHLED RUNNING
 // ========== begin POHLED LOGS
-if($key_view == $stat_view_array['v']) {
-	?>
+if ($key_view == $stat_view_array['v']) {
+?>
 			<h2>Logs</h2>
 			<p><a href="./?v=home">Dashboard</a> &rsaquo; <a href="./?v=more">More</a> &rsaquo; Logs</p>
 <?php
 // sql dotaz #6
-	$sqlquery_6 = "SELECT * FROM logs order by ts DESC LIMIT 1000";
+	$sqlquery_6 = "SELECT * FROM logs order by ts DESC LIMIT $max_rows_value";
 // ochrana dotazu #6
-	if($result_6 = mysqli_query($connection, $sqlquery_6)) {
+	if ($result_6 = mysqli_query($connection, $sqlquery_6)) {
 // roztrhani vysledku sql dotazu #6
-		if(mysqli_num_rows($result_6) > 0) {
+		if (mysqli_num_rows($result_6) > 0) {
 ?>
 			<div rows="5" id="textarea-container">
 				<pre><?php
 // cyklus pro vypis dat #6
-			while($row_6 = mysqli_fetch_array($result_6)) {
+			while ($row_6 = mysqli_fetch_array($result_6)) {
 				echo '' . $row_6['ts'] . ' ';
 				echo '' . $row_6['severity'] . ' ';
 				echo '' . $row_6['message'] . '';
@@ -1565,10 +1635,9 @@ if($key_view == $stat_view_array['v']) {
 	</div>
 	<div id="footer">
 <?php
-
 // ========== end POHLED LOGS
-// ========== begin JINE POHLED NEZ LOGIN
-if($key_view != $stat_view_array['l']) {
+// ========== begin JINE POHLEDY NEZ LOGIN
+if ($key_view != $stat_view_array['l']) {
 ?>
 		<ul id="footer-navigation">
 			<li id="navigation-home"><a href="./?v=home">Dash</a></li>
@@ -1579,11 +1648,71 @@ if($key_view != $stat_view_array['l']) {
 		</ul>
 <?php
 }
-// ========== end JINE POHLED NEZ LOGIN
+// ========== end JINE POHLEDY NEZ LOGIN
 ?>
 	</div>
 </div>
-<script src="./js/meritaccess-body.min.js"></script>
+<div id="infobox" style="display: none;">
+	<div id="content-mini">
+		<h2>Information</h2>
+<?php
+if ($key_view != $stat_view_array['l']) {
+?>
+		<p>Data from <a href="./?v=running">Running</a></p>
+<?php
+}
+// sql dotaz #8
+	$sqlquery_8 = "SELECT * FROM running order by property DESC LIMIT $max_rows_value";
+// ochrana dotazu #8
+	if ($result_8 = mysqli_query($connection, $sqlquery_8)) {
+// roztrhani vysledku sql dotazu #8
+		if (mysqli_num_rows($result_8) > 0) {
+?>
+		<div id="table-container-mini">
+			<table>
+				<thead>
+					<tr>
+						<th class="th-3">Property</th>
+						<th class="th-3">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Date, time</td>
+						<td><span id="datetime"></span></td>
+					</tr>
+<?php
+// cyklus pro vypis dat #3
+			while ($row_8 = mysqli_fetch_array($result_8)) {
+// zkontrolujeme, zda je hodnota ve sloupci property bud MyIP nebo Version
+				if ($row_8['property'] === 'MyIP' || $row_8['property'] === 'Version') {
+					echo "\t\t\t\t\t";
+					echo '<tr>';
+					echo '<td>' . $row_8['property'] . '</td>';
+					echo '<td>' . $row_8['value'] . '</td>';
+					echo '</tr>';
+					echo "\n";
+				}
+			}
+?>
+				</tbody>
+			</table>
+		</div>
+<?php
+// uvolneni pameti #3
+			mysqli_free_result($result_8);
+		} else {
+			echo '<p>No data to display!</p>';
+		}
+	} else {
+		echo '<p>Unable to process query! "' . $sqlquery_8 . '", Error! ' . mysqli_error($connection) . '</p>';
+	}
+?>
+	</div>
+</div>
+<script src="<?php
+echo fileVersioning('./js/meritaccess-body.min.js');
+?>"></script>
 </body>
 </html><?php
 // ukonceni spojeni
