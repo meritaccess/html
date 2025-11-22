@@ -24,7 +24,7 @@ $act_datetime_unix = strtotime(date('Y-m-d H:i:s'));
 $search_definition_0 = 'v=';
 // pole pohledu
 $stat_view_array = ['a' => 'access', 'c' => 'cards', 'g' => 'readers', 'h' => 'home', 'l' => 'lock', 'm' => 'more', 'o' => 'config', 'r' => 'running', 't' => 'timezones', 'u' => 'users', 'v' => 'logs', 'x' => 'drop'];
-$stat_cond_array = ['b' => 'block', 'd' => 'delete', 'e' => 'edit', 'p' => 'past', 'r' => 'reboot', 's' => 'resync'];
+$stat_cond_array = ['b' => 'block', 'c' => 'clear', 'd' => 'delete', 'e' => 'edit', 'p' => 'past', 'r' => 'reboot', 's' => 'resync'];
 $stat_info_array = ['o' => 'order'];
 $stat_fact_array = ['z' => 'alert'];
 // titulky v title
@@ -355,77 +355,47 @@ if ($key_view == $stat_view_array['u'] && $key_cond != $stat_cond_array['p'] && 
 // ========== begin CONFIGDU
 // editace konfigurace
 if ($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['e']) {
-	$config_data = array();
-	$config_data_temp = array();
-// editace zaznamu konfigurace
+// process form submit
 	if (isset($_POST['edit-config'])) {
-// pokud existuje session, presune ji do temp_session
-		if (!isset($_SESSION['config_data_temp']) && isset($_SESSION['config_data'])) {
-			$_SESSION['config_data_temp'] = $_SESSION['config_data'];
-		}
-		$id = htmlspecialchars($_POST['id'], ENT_QUOTES, 'UTF-8');
-		$edit_property = htmlspecialchars($_POST['edit-property'], ENT_QUOTES, 'UTF-8');
-		$edit_value = htmlspecialchars($_POST['edit-value'], ENT_QUOTES, 'UTF-8');
-		$configdu_valid = htmlspecialchars($_POST['configdu-valid'], ENT_QUOTES, 'UTF-8');
+		$id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+		$edit_property = isset($_POST['edit-property']) ? htmlspecialchars($_POST['edit-property'], ENT_QUOTES, 'UTF-8') : '';
+		$edit_value = isset($_POST['edit-value']) ? htmlspecialchars($_POST['edit-value'], ENT_QUOTES, 'UTF-8') : '';
+		$configdu_valid = isset($_POST['configdu-valid']) ? htmlspecialchars($_POST['configdu-valid'], ENT_QUOTES, 'UTF-8') : '';
+// validate value by regex
 		if (!preg_match('/' . $configdu_valid . '/', $edit_value)) {
 			$_SESSION['error_message'] = 'Error! Invalid format for property: ' . $edit_property . '!';
 			header('Location: ./?v=config;f=alert');
 			exit;
-		} else {
-// najde index daneho id v poli session
-			$index = array_search($id, array_column($_SESSION['config_data_temp'], 'id'));
-// pokud index byl nalezen
-			if ($index !== false) {
-// aktualizuje data v session
-				$_SESSION['config_data_temp'][$index]['property'] = $edit_property;
-				$_SESSION['config_data_temp'][$index]['value'] = $edit_value;
-			} else {
-// pokud index nebyl nalezen, prida novy zaznam
-				$_SESSION['config_data_temp'][] = array('id' => $id, 'property' => $edit_property, 'value' => $edit_value);
-			}
-			header('Location: ./?v=config');
+		}
+// prepare update statement
+		$sqlquery_edit = "UPDATE ConfigDU SET property = ?, value = ? WHERE id = ?";
+		$stmt = mysqli_prepare($connection, $sqlquery_edit);
+		if ($stmt === false) {
+			$_SESSION['error_message'] = 'Error in preparing sql: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
+			header('Location: ./?v=config;f=alert');
 			exit;
 		}
-	}
-}
-// editace konfigurace - ulozeni
-if ($key_view == $stat_view_array['o'] && $key_cond == $stat_cond_array['p']) {
-	$sqlquery_edit = "UPDATE ConfigDU SET property = ?, value = ? WHERE id = ?";
-	$stmt = mysqli_prepare($connection, $sqlquery_edit);
-	if ($stmt === false) {
-		$_SESSION['error_message'] = 'Error in preparing sql: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
-		header('Location: ./?v=config;f=alert');
-		exit;
-	}
-// projde vsechny zaznamy v session
-	if (isset($_SESSION['config_data_temp'])) {
-		foreach ($_SESSION['config_data_temp'] as $data) {
-			$id = $data['id'];
-			$edit_property = $data['property'];
-			$edit_value = $data['value'];
-// priprava zaznamu
-			mysqli_stmt_bind_param($stmt, "ssi", $edit_property, $edit_value, $id);
-			$result_edit = mysqli_stmt_execute($stmt);
-// pokud doslo k chybe, vypise ji
-			if (!$result_edit) {
-				$_SESSION['error_message'] = 'Error updating database: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
-				header('Location: ./?v=config;f=alert');
-				exit;
-			}
+// bind and execute update
+		mysqli_stmt_bind_param($stmt, "ssi", $edit_property, $edit_value, $id);
+		$result_edit = mysqli_stmt_execute($stmt);
+		if (!$result_edit) {
+			$_SESSION['error_message'] = 'Error updating database: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
+			header('Location: ./?v=config;f=alert');
+			exit;
 		}
-		unset($_SESSION['config_data_temp']);
-	}
 // aktualizace running
-	$sqlquery_update_running = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
-	$result_update_running = mysqli_query($connection, $sqlquery_update_running);
-	if (!$result_update_running) {
-		$_SESSION['error_message'] = 'Error updating running table: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
-		header('Location: ./?v=config;f=alert');
+		$sqlquery_update_running = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
+		$result_update_running = mysqli_query($connection, $sqlquery_update_running);
+		if (!$result_update_running) {
+			$_SESSION['error_message'] = 'Error updating running table: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
+			header('Location: ./?v=config;f=alert');
+			exit;
+		}
+// presmerovani
+		$_SESSION['error_message'] = 'Configuration has been saved. A <a href="./?v=running;s=reboot" onclick="return confirm(\'Are you sure you want to reboot the unit?\');">reboot</a> of the unit is now required!';
+		header('Location: ./?v=more;f=alert');
 		exit;
 	}
-// presmerovani
-	header('Location: ./?v=config');
-	exit;
 }
 // ========== end CONFIGDU
 // ========== begin TIMEZONES
@@ -532,7 +502,8 @@ if ($key_view == $stat_view_array['t'] && $key_cond != $stat_cond_array['p'] && 
 		$params = array_merge([$edit_cislo, $edit_nazev, $edit_popis, $edit_stav], $times_flat, [$id]);
 		$types = str_repeat('s', count($params) - 1) . 'i';
 		execute_query($connection, $sqlquery_edit_zaznam, $params, $types);
-		header('location: ./?v=timezones');
+		$_SESSION['error_message'] = 'Timezone has been saved. A <a href="./?v=running;s=reboot" onclick="return confirm(\'Are you sure you want to reboot the unit?\');">reboot</a> of the unit is now required!';
+		header('Location: ./?v=more;f=alert');
 		exit;
 	}
 }
@@ -582,7 +553,8 @@ if ($key_view == $stat_view_array['g'] && $key_cond == $stat_cond_array['e']) {
 		if ($stmt) {
 			mysqli_stmt_bind_param($stmt, "sssssssi", $edit_outputu, $edit_pulzu, $edit_cas_planu, $edit_monitor, $edit_monitordef, $edit_opentime, $edit_hasmonitor, $id);
 			if (mysqli_stmt_execute($stmt)) {
-				header('Location: ./?v=readers');
+				$_SESSION['error_message'] = 'Readers has been saved. A <a href="./?v=running;s=reboot" onclick="return confirm(\'Are you sure you want to reboot the unit?\');">reboot</a> of the unit is now required!';
+				header('Location: ./?v=more;f=alert');
 				exit;
 			} else {
 				$_SESSION['error_message'] = 'Error updating record: ' . mysqli_stmt_error($stmt);
@@ -634,18 +606,6 @@ if ($key_view == $stat_view_array['r'] && $key_cond == $stat_cond_array['r']) {
 	}
 }
 // ========== end QUICK REBOOT
-
-
-
-
-
-
-
-
-
-
-
-
 // ========== begin TIME SYNC AND QUICK REBOOT
 if ($key_view === $stat_view_array['r'] && $key_cond === $stat_cond_array['s']) {
 	$sql_restart = "UPDATE running SET value = 1 WHERE property = 'restart' AND value = 0";
@@ -682,18 +642,19 @@ if ($key_view === $stat_view_array['r'] && $key_cond === $stat_cond_array['s']) 
 	exit;
 }
 // ========== end TIME SYNC AND QUICK REBOOT
-
-
-
-
-
-
-
-
-
-
-
-
+// ========== begin CLEAR LOGS
+if ($key_view == $stat_view_array['v'] && $key_cond == $stat_cond_array['c']) {
+	$delete_sql = "DELETE FROM logs";
+	if (!mysqli_query($connection, $delete_sql)) {
+		$_SESSION['error_message'] = 'Failed to clear logs. SQL error: ' . htmlspecialchars(mysqli_error($connection), ENT_QUOTES, 'UTF-8') . '!';
+		header('Location: ./?v=logs;f=alert');
+		exit;
+	}
+	$_SESSION['error_message'] = 'Logs have been successfully cleared.';
+	header('Location: ./?v=logs;f=alert');
+	exit;
+}
+// ========== end CLEAR LOGS
 // ========== begin STATUS
 $status_value = '';
 // ========== end STATUS
@@ -768,12 +729,10 @@ if ($key_view == $stat_view_array['t']) {
 			<li id="add-timezone"><a href="./?v=timezones;s=past">Timezone</a></li>
 <?php
 }
-if ($key_view == $stat_view_array['o']) {
-	if (isset($_SESSION['config_data_temp'])) {
+if ($key_view == $stat_view_array['v']) {
 ?>
-			<li id="save"><a href="./?v=config;s=past" onclick="return confirm('Are you sure you want to commit all changes?');">Confirm</a></li>
+			<li id="delete"><a href="./?v=logs;s=clear" onclick="return confirm('Are you sure you want to clear all logs?');">Clear logs</a></li>
 <?php
-	}
 }
 ?>
 			<li id="info"><a href="#infobox" id="infobtn">Info</a></li>

@@ -65,6 +65,11 @@ div#error-info p {
 	display: block;
 	padding: 10px;
 }
+div#error-info p a {
+	color: var(--black);
+	border-bottom: 1px var(--black) solid;
+	text-transform: uppercase;
+}
 div#server-time-status {
 	grid-area: comm;
 	background-color: var(--amber500);
@@ -148,6 +153,9 @@ ul#header-nav li#add-card a, ul#header-nav li#add-card a:hover, ul#header-nav li
 }
 ul#header-nav li#logout a, ul#header-nav li#logout a:hover {
 	background-image: var(--icon_logout);
+}
+ul#header-nav li#delete a, ul#header-nav li#delete a:hover {
+	background-image: var(--icon_delete);
 }
 ul#header-nav li#save a, ul#header-nav li#save a:hover {
 	color: var(--red500);
@@ -243,13 +251,13 @@ ul#more li#reload a {
 	background-image: var(--icon_reload-alert);
 }
 ul#more li#resync a {
-	background-image: var(--icon_timer-refresh-outline);
+	background-image: var(--icon_timer-refresh);
 }
 ul#more li#logs a {
 	background-image: var(--icon_pending_actions);
 }
 ul#more li#readers a {
-	background-image: var(--icon_credit_card_scan_outline);
+	background-image: var(--icon_credit_card_scan);
 }
 ul#more li#version a {
 	background-image: var(--icon_info);
